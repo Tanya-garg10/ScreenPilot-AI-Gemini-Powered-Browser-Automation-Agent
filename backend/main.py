@@ -1,12 +1,15 @@
 from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+
 from automation import run_browser_task
 from gemini_agent import plan_action
-import os
 
-# Create screenshots folder if it doesn't exist
-os.makedirs("screenshots", exist_ok=True)
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent
+SCREENSHOTS_DIR = BASE_DIR / "screenshots"
+SCREENSHOTS_DIR.mkdir(exist_ok=True)
 
 app = FastAPI(
     title="ScreenPilot AI Backend",
@@ -14,7 +17,6 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Allow frontend requests
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -23,22 +25,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Serve screenshots as static files
-app.mount("/screenshots", StaticFiles(directory="screenshots"), name="screenshots")
+app.mount("/screenshots", StaticFiles(directory=str(SCREENSHOTS_DIR)), name="screenshots")
 
 
 @app.get("/")
 def home():
-    return {
-        "message": "ScreenPilot AI backend is running"
-    }
+    return {"message": "ScreenPilot AI backend is running"}
 
 
 @app.get("/health")
 def health():
-    return {
-        "status": "ok"
-    }
+    return {"status": "ok"}
 
 
 @app.get("/plan")
@@ -52,9 +49,9 @@ def run_agent(command: str = Query(..., description="User command")):
         "status": "success",
         "command": command,
         "actions": [
-            {"action": "analyze_command"},
-            {"action": "generate_plan"},
-            {"action": "execute_browser_task"}
+            {"step": 1, "action": "analyze_command"},
+            {"step": 2, "action": "generate_plan"},
+            {"step": 3, "action": "execute_browser"}
         ]
     }
 
@@ -64,7 +61,9 @@ def run_browser(command: str = Query(..., description="Browser task")):
     result = run_browser_task(command)
 
     if result.get("status") == "success" and result.get("screenshot"):
-        screenshot_file = result["screenshot"].replace("\\", "/").split("/")[-1]
-        result["screenshot_url"] = f"https://screenpilot-ai-gemini-powered-browser-9kk0.onrender.com/screenshots/{screenshot_file}"
+        file_name = Path(result["screenshot"]).name
+        result["screenshot_url"] = (
+            f"https://screenpilot-ai-gemini-powered-browser-9kk0.onrender.com/screenshots/{file_name}"
+        )
 
     return result
