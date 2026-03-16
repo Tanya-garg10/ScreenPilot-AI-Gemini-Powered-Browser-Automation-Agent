@@ -1,5 +1,14 @@
 from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+
+from automation import run_browser_task
+from gemini_agent import plan_action
+
+import os
+
+# create screenshot folder
+os.makedirs("screenshots", exist_ok=True)
 
 app = FastAPI(
     title="ScreenPilot AI Backend",
@@ -7,6 +16,7 @@ app = FastAPI(
     version="1.0.0"
 )
 
+# CORS (for Vercel frontend)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -15,29 +25,51 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# serve screenshots
+app.mount("/screenshots", StaticFiles(directory="screenshots"), name="screenshots")
+
+
 @app.get("/")
 def home():
     return {"message": "ScreenPilot AI backend is running"}
+
 
 @app.get("/health")
 def health():
     return {"status": "ok"}
 
+
+# 🔹 AI plan endpoint
+@app.get("/plan")
+def plan(command: str = Query(..., description="User command")):
+    result = plan_action(command)
+    return result
+
+
+# 🔹 agent simulation
 @app.get("/run")
 def run_agent(command: str = Query(..., description="User command")):
     return {
         "status": "success",
         "command": command,
         "actions": [
-            {"action": "click", "target": "search box"},
-            {"action": "type", "text": command},
-            {"action": "keypress", "key": "Enter"}
+            {"step": 1, "action": "analyze_command"},
+            {"step": 2, "action": "generate_plan"},
+            {"step": 3, "action": "execute_browser"}
         ]
     }
 
+
+# 🔹 browser automation
 @app.get("/run-browser")
 def run_browser(command: str = Query(..., description="Browser task")):
-    return {
-        "status": "success",
-        "message": f"Browser automation placeholder for: {command}"
-    }
+
+    result = run_browser_task(command)
+
+    if result.get("status") == "success" and result.get("screenshot"):
+
+        file = result["screenshot"].replace("\\", "/").split("/")[-1]
+
+        result["screenshot_url"] = f"https://energetic-vennie-terrorful.ngrok-free.dev/screenshots/{file}"
+
+    return result
