@@ -9,9 +9,8 @@ def run_browser_task(command: str):
     screenshots_dir = "screenshots"
     os.makedirs(screenshots_dir, exist_ok=True)
 
-    plan = plan_action(command)
-
     try:
+        plan = plan_action(command)
         intent = plan.get("intent", "")
 
         # -----------------------------
@@ -38,7 +37,11 @@ def run_browser_task(command: str):
         # BROWSER AUTOMATION MODE
         # -----------------------------
         with sync_playwright() as p:
-            browser = p.chromium.launch(headless=False)
+            browser = p.chromium.launch(
+                headless=True,
+                args=["--no-sandbox", "--disable-dev-shm-usage"]
+            )
+
             page = browser.new_page()
 
             try:
@@ -47,7 +50,7 @@ def run_browser_task(command: str):
                 if intent == "search_devpost":
                     query = urllib.parse.quote(plan.get("query", command))
                     target_url = f"https://devpost.com/search/projects?q={query}"
-                    page.goto(target_url, wait_until="domcontentloaded")
+                    page.goto(target_url, wait_until="domcontentloaded", timeout=60000)
                     final_message = f"Searched Devpost for: {plan.get('query', command)}"
 
                 elif intent == "open_site":
@@ -68,21 +71,19 @@ def run_browser_task(command: str):
                         else:
                             url = "https://www.bing.com/search?q=" + urllib.parse.quote(command)
 
-                    page.goto(url, wait_until="domcontentloaded")
+                    page.goto(url, wait_until="domcontentloaded", timeout=60000)
                     final_message = f"Opened site: {url}"
 
                 elif intent == "open_gmail":
-                    # Gmail likely needs login, so just open homepage
-                    page.goto("https://mail.google.com", wait_until="domcontentloaded")
+                    page.goto("https://mail.google.com", wait_until="domcontentloaded", timeout=60000)
                     final_message = "Opened Gmail login page"
 
                 else:
                     query = urllib.parse.quote(plan.get("query", command))
                     target_url = f"https://www.bing.com/search?q={query}"
-                    page.goto(target_url, wait_until="domcontentloaded")
+                    page.goto(target_url, wait_until="domcontentloaded", timeout=60000)
                     final_message = f"Searched web for: {plan.get('query', command)}"
 
-                page.wait_for_load_state("networkidle")
                 page.wait_for_timeout(3000)
 
                 filename = f"result_{int(time.time())}.png"
