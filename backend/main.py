@@ -65,6 +65,6 @@ def run_browser(command: str = Query(..., description="Browser task")):
 
     if result.get("status") == "success" and result.get("screenshot"):
         screenshot_file = result["screenshot"].replace("\\", "/").split("/")[-1]
-        result["screenshot_url"] = f"https://energetic-vennie-terrorful.ngrok-free.dev/screenshots/{screenshot_file}"
+        result["screenshot_url"] = f"https://screenpilot-ai-gemini-powered-browser-9kk0.onrender.com/screenshots/{screenshot_file}"
 
     return result
