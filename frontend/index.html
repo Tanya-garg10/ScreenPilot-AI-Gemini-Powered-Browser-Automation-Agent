@@ -124,10 +124,6 @@
       color: #ef4444;
     }
 
-    .muted {
-      color: #cbd5e1;
-    }
-
     a {
       color: #93c5fd;
       text-decoration: none;
@@ -307,7 +303,12 @@
       document.getElementById("planBox").textContent = "";
 
       try {
-        const response = await fetch(`${BASE_URL}/plan?command=${encodeURIComponent(command)}`);
+        const response = await fetch(`${BASE_URL}/plan?command=${encodeURIComponent(command)}`, {
+          headers: {
+            "ngrok-skip-browser-warning": "true"
+          }
+        });
+
         if (!response.ok) {
           throw new Error(`HTTP error! Status: ${response.status}`);
         }
@@ -347,7 +348,12 @@
       document.getElementById("emailBody").textContent = "";
 
       try {
-        const response = await fetch(`${BASE_URL}/run-browser?command=${encodeURIComponent(command)}`);
+        const response = await fetch(`${BASE_URL}/run-browser?command=${encodeURIComponent(command)}`, {
+          headers: {
+            "ngrok-skip-browser-warning": "true"
+          }
+        });
+
         if (!response.ok) {
           throw new Error(`HTTP error! Status: ${response.status}`);
         }
@@ -361,7 +367,6 @@
 
         document.getElementById("runBox").textContent = JSON.stringify(data, null, 2);
 
-        // Email preview
         if (data.email_preview) {
           document.getElementById("emailInfo").textContent = "Email draft generated successfully.";
           document.getElementById("emailTo").textContent = data.email_preview.to || "(not specified)";
@@ -372,7 +377,6 @@
           document.getElementById("emailInfo").textContent = "No email draft returned.";
         }
 
-        // Screenshot preview
         if (data.screenshot_url) {
           document.getElementById("imageInfo").innerHTML =
             `<strong>Screenshot URL:</strong> <a href="${data.screenshot_url}" target="_blank">${data.screenshot_url}</a>`;
