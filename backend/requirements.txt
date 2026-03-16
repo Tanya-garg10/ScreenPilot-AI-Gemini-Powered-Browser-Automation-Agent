@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+playwright
+pillow
+google-genai
+python-multipart
