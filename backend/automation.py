@@ -1,24 +1,24 @@
+from pathlib import Path
 from playwright.sync_api import sync_playwright
-import os
 import urllib.parse
 import time
+
 from gemini_agent import plan_action
 
 
-def run_browser_task(command: str):
-    screenshots_dir = "screenshots"
-    os.makedirs(screenshots_dir, exist_ok=True)
+BASE_DIR = Path(__file__).resolve().parent
+SCREENSHOTS_DIR = BASE_DIR / "screenshots"
+SCREENSHOTS_DIR.mkdir(exist_ok=True)
 
+
+def run_browser_task(command: str):
     try:
         plan = plan_action(command)
         intent = plan.get("intent", "")
 
-        # -----------------------------
-        # EMAIL DRAFT MODE
-        # -----------------------------
+        # Email draft mode
         if intent == "compose_email":
             email = plan.get("email", {})
-
             return {
                 "status": "success",
                 "message": "Email draft generated successfully",
@@ -33,13 +33,15 @@ def run_browser_task(command: str):
                 }
             }
 
-        # -----------------------------
-        # BROWSER AUTOMATION MODE
-        # -----------------------------
         with sync_playwright() as p:
             browser = p.chromium.launch(
                 headless=True,
-                args=["--no-sandbox", "--disable-dev-shm-usage"]
+                args=[
+                    "--no-sandbox",
+                    "--disable-dev-shm-usage",
+                    "--disable-gpu",
+                    "--disable-setuid-sandbox"
+                ]
             )
 
             page = browser.new_page()
@@ -79,16 +81,16 @@ def run_browser_task(command: str):
                     final_message = "Opened Gmail login page"
 
                 else:
-                    query = urllib.parse.quote(plan.get("query", command))
+                    query = urllib.parse.quote(plan.get("query", command) or command)
                     target_url = f"https://www.bing.com/search?q={query}"
                     page.goto(target_url, wait_until="domcontentloaded", timeout=60000)
-                    final_message = f"Searched web for: {plan.get('query', command)}"
+                    final_message = f"Searched web for: {plan.get('query', command) or command}"
 
                 page.wait_for_timeout(3000)
 
                 filename = f"result_{int(time.time())}.png"
-                screenshot_path = os.path.join(screenshots_dir, filename)
-                page.screenshot(path=screenshot_path, full_page=True)
+                screenshot_path = SCREENSHOTS_DIR / filename
+                page.screenshot(path=str(screenshot_path), full_page=True)
 
                 result = {
                     "status": "success",
@@ -96,14 +98,17 @@ def run_browser_task(command: str):
                     "plan": plan,
                     "final_url": page.url,
                     "page_title": page.title(),
-                    "screenshot": screenshot_path
+                    "screenshot": str(screenshot_path)
                 }
 
             except Exception as e:
                 result = {
                     "status": "error",
                     "message": str(e),
-                    "plan": plan
+                    "plan": plan,
+                    "final_url": "",
+                    "page_title": "",
+                    "screenshot": ""
                 }
 
             finally:
@@ -115,5 +120,8 @@ def run_browser_task(command: str):
         return {
             "status": "error",
             "message": str(e),
-            "plan": {}
+            "plan": {},
+            "final_url": "",
+            "page_title": "",
+            "screenshot": ""
         }
