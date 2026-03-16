@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ScreenPilot AI</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #0f172a;
+      color: #f8fafc;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 40px auto;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #60a5fa;
+      margin-bottom: 10px;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #cbd5e1;
+      margin-bottom: 30px;
+    }
+
+    .card {
+      background: #1e293b;
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    }
+
+    .input-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    input {
+      flex: 1;
+      min-width: 260px;
+      padding: 14px;
+      border-radius: 10px;
+      border: none;
+      font-size: 16px;
+      outline: none;
+    }
+
+    button {
+      padding: 12px 18px;
+      border: none;
+      border-radius: 10px;
+      background: #2563eb;
+      color: white;
+      font-size: 15px;
+      cursor: pointer;
+      transition: 0.2s ease;
+    }
+
+    button:hover {
+      background: #1d4ed8;
+    }
+
+    .secondary {
+      background: #475569;
+    }
+
+    .secondary:hover {
+      background: #334155;
+    }
+
+    .danger {
+      background: #dc2626;
+    }
+
+    .danger:hover {
+      background: #b91c1c;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .label {
+      color: #93c5fd;
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+
+    .box {
+      background: #334155;
+      border-radius: 10px;
+      padding: 14px;
+      min-height: 60px;
+      white-space: pre-wrap;
+      word-break: break-word;
+      overflow-x: auto;
+    }
+
+    .status {
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+
+    .success {
+      color: #22c55e;
+    }
+
+    .error {
+      color: #ef4444;
+    }
+
+    .muted {
+      color: #cbd5e1;
+    }
+
+    a {
+      color: #93c5fd;
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    img {
+      width: 100%;
+      max-height: 500px;
+      object-fit: contain;
+      background: #0f172a;
+      border-radius: 12px;
+      border: 2px solid #475569;
+      margin-top: 10px;
+    }
+
+    .examples {
+      margin-top: 12px;
+      color: #cbd5e1;
+      font-size: 14px;
+      line-height: 1.8;
+    }
+
+    .examples span {
+      display: inline-block;
+      background: #334155;
+      padding: 6px 10px;
+      border-radius: 8px;
+      margin: 4px 6px 0 0;
+      cursor: pointer;
+    }
+
+    .examples span:hover {
+      background: #475569;
+    }
+
+    .email-card {
+      background: #334155;
+      border-radius: 12px;
+      padding: 16px;
+      margin-top: 10px;
+      line-height: 1.6;
+    }
+
+    .email-field {
+      margin-bottom: 12px;
+    }
+
+    .email-field strong {
+      color: #93c5fd;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    @media (max-width: 768px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .input-row {
+        flex-direction: column;
+      }
+
+      button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>ScreenPilot AI</h1>
+    <div class="subtitle">
+      A Gemini-powered browser automation agent that understands natural language commands.
+    </div>
+
+    <div class="card">
+      <div class="label">Enter Command</div>
+      <div class="input-row">
+        <input
+          id="commandInput"
+          type="text"
+          placeholder="e.g. open github / AI hackathons on Devpost / write email to recruiter about software engineer role"
+        />
+        <button type="button" onclick="startVoice()">🎤 Speak</button>
+        <button type="button" class="secondary" onclick="getPlan()">Plan</button>
+        <button type="button" onclick="runTask()">Run</button>
+        <button type="button" class="danger" onclick="clearAll()">Clear</button>
+      </div>
+
+      <div class="examples">
+        Try:
+        <span onclick="setExample('open github')">open github</span>
+        <span onclick="setExample('AI hackathons on Devpost')">AI hackathons on Devpost</span>
+        <span onclick="setExample('python internships')">python internships</span>
+        <span onclick="setExample('write email to recruiter about software engineer role')">write email to recruiter about software engineer role</span>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <div class="label">AI Plan</div>
+        <div id="planStatus" class="status"></div>
+        <div id="planBox" class="box">No plan generated yet.</div>
+      </div>
+
+      <div class="card">
+        <div class="label">Execution Result</div>
+        <div id="runStatus" class="status"></div>
+        <div id="runBox" class="box">No task executed yet.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="label">Email Draft Preview</div>
+      <div id="emailInfo" class="box">No email draft available.</div>
+      <div id="emailPreview" class="email-card hidden">
+        <div class="email-field"><strong>To:</strong> <span id="emailTo"></span></div>
+        <div class="email-field"><strong>Subject:</strong> <span id="emailSubject"></span></div>
+        <div class="email-field"><strong>Body:</strong></div>
+        <div id="emailBody" class="box" style="margin-top:8px;"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="label">Screenshot Preview</div>
+      <div id="imageInfo" class="box">No screenshot available yet.</div>
+      <img id="screenshotImg" src="" alt="Screenshot preview" class="hidden" />
+    </div>
+  </div>
+
+  <script>
+    const BASE_URL = "http://127.0.0.1:8001";
+
+    function setExample(text) {
+      document.getElementById("commandInput").value = text;
+    }
+
+    function getCommand() {
+      return document.getElementById("commandInput").value.trim();
+    }
+
+    function clearAll() {
+      document.getElementById("commandInput").value = "";
+      document.getElementById("planStatus").textContent = "";
+      document.getElementById("runStatus").textContent = "";
+      document.getElementById("planBox").textContent = "No plan generated yet.";
+      document.getElementById("runBox").textContent = "No task executed yet.";
+      document.getElementById("imageInfo").textContent = "No screenshot available yet.";
+      document.getElementById("emailInfo").textContent = "No email draft available.";
+
+      const img = document.getElementById("screenshotImg");
+      img.src = "";
+      img.classList.add("hidden");
+
+      const emailPreview = document.getElementById("emailPreview");
+      emailPreview.classList.add("hidden");
+      document.getElementById("emailTo").textContent = "";
+      document.getElementById("emailSubject").textContent = "";
+      document.getElementById("emailBody").textContent = "";
+    }
+
+    async function getPlan() {
+      const command = getCommand();
+      if (!command) {
+        alert("Please enter a command.");
+        return;
+      }
+
+      document.getElementById("planStatus").textContent = "Generating plan...";
+      document.getElementById("planStatus").className = "status";
+      document.getElementById("planBox").textContent = "";
+
+      try {
+        const response = await fetch(`${BASE_URL}/plan?command=${encodeURIComponent(command)}`);
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        document.getElementById("planStatus").textContent = "Plan ready";
+        document.getElementById("planStatus").className = "status success";
+        document.getElementById("planBox").textContent = JSON.stringify(data, null, 2);
+      } catch (error) {
+        document.getElementById("planStatus").textContent = "Plan error";
+        document.getElementById("planStatus").className = "status error";
+        document.getElementById("planBox").textContent = error.message;
+      }
+    }
+
+    async function runTask() {
+      const command = getCommand();
+      if (!command) {
+        alert("Please enter a command.");
+        return;
+      }
+
+      document.getElementById("runStatus").textContent = "Running task...";
+      document.getElementById("runStatus").className = "status";
+      document.getElementById("runBox").textContent = "";
+
+      document.getElementById("imageInfo").textContent = "Waiting for screenshot...";
+      const img = document.getElementById("screenshotImg");
+      img.src = "";
+      img.classList.add("hidden");
+
+      document.getElementById("emailInfo").textContent = "Checking for email draft...";
+      document.getElementById("emailPreview").classList.add("hidden");
+      document.getElementById("emailTo").textContent = "";
+      document.getElementById("emailSubject").textContent = "";
+      document.getElementById("emailBody").textContent = "";
+
+      try {
+        const response = await fetch(`${BASE_URL}/run-browser?command=${encodeURIComponent(command)}`);
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        document.getElementById("runStatus").textContent =
+          data.status === "success" ? "Task completed" : "Task failed";
+        document.getElementById("runStatus").className =
+          data.status === "success" ? "status success" : "status error";
+
+        document.getElementById("runBox").textContent = JSON.stringify(data, null, 2);
+
+        // Email preview
+        if (data.email_preview) {
+          document.getElementById("emailInfo").textContent = "Email draft generated successfully.";
+          document.getElementById("emailTo").textContent = data.email_preview.to || "(not specified)";
+          document.getElementById("emailSubject").textContent = data.email_preview.subject || "(no subject)";
+          document.getElementById("emailBody").textContent = data.email_preview.body || "(empty body)";
+          document.getElementById("emailPreview").classList.remove("hidden");
+        } else {
+          document.getElementById("emailInfo").textContent = "No email draft returned.";
+        }
+
+        // Screenshot preview
+        if (data.screenshot_url) {
+          document.getElementById("imageInfo").innerHTML =
+            `<strong>Screenshot URL:</strong> <a href="${data.screenshot_url}" target="_blank">${data.screenshot_url}</a>`;
+          img.src = data.screenshot_url + "?t=" + new Date().getTime();
+          img.classList.remove("hidden");
+        } else {
+          document.getElementById("imageInfo").textContent = "No screenshot URL returned.";
+        }
+      } catch (error) {
+        document.getElementById("runStatus").textContent = "Run error";
+        document.getElementById("runStatus").className = "status error";
+        document.getElementById("runBox").textContent = error.message;
+        document.getElementById("imageInfo").textContent = "Unable to load screenshot.";
+        document.getElementById("emailInfo").textContent = "Unable to generate email draft.";
+      }
+    }
+
+    function startVoice() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+      if (!SpeechRecognition) {
+        alert("Speech recognition is not supported in this browser.");
+        return;
+      }
+
+      const recognition = new SpeechRecognition();
+      recognition.lang = "en-US";
+      recognition.start();
+
+      recognition.onresult = function(event) {
+        const transcript = event.results[0][0].transcript;
+        document.getElementById("commandInput").value = transcript;
+      };
+
+      recognition.onerror = function(event) {
+        alert("Voice recognition error: " + event.error);
+      };
+    }
+  </script>
+</body>
+</html>
