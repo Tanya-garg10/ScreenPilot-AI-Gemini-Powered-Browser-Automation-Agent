@@ -39,14 +39,12 @@ def health():
     return {"status": "ok"}
 
 
-# 🔹 AI plan endpoint
 @app.get("/plan")
 def plan(command: str = Query(..., description="User command")):
     result = plan_action(command)
     return result
 
 
-# 🔹 agent simulation
 @app.get("/run")
 def run_agent(command: str = Query(..., description="User command")):
     return {
@@ -60,7 +58,6 @@ def run_agent(command: str = Query(..., description="User command")):
     }
 
 
-# 🔹 browser automation
 @app.get("/run-browser")
 def run_browser(command: str = Query(..., description="Browser task")):
 
@@ -70,6 +67,6 @@ def run_browser(command: str = Query(..., description="Browser task")):
 
         file = result["screenshot"].replace("\\", "/").split("/")[-1]
 
-        result["screenshot_url"] = f"https://energetic-vennie-terrorful.ngrok-free.dev/screenshots/{file}"
+        result["screenshot_url"] = f"https://screenpilot-ai-gemini-powered-browser-9kk0.onrender.com/screenshots/{file}"
 
     return result
